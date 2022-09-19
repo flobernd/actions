@@ -1,0 +1,56 @@
+name: Prepare Scripts
+author: Florian Bernd
+description: Sets up the Python scripts for the given composite action path.
+
+inputs:
+  id:
+    description: An unique id for the composite action script.
+    type: string
+    required: true
+  action-path:
+    description: The composite action path.
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      if: env.FB_SCRIPT_INITIALIZED_PYTHON == ''
+      uses: actions/setup-python@v4.3.0
+      with:
+        python-version: '3.x'
+
+    - name: Check Precondition
+      id: precondition
+      shell: bash
+      run: |
+        echo "value=$(echo $FB_SCRIPT_INITIALIZED_${{ inputs.id }})" >> $GITHUB_OUTPUT
+
+    - name: Determine Cache Key
+      id: cache-key
+      if: steps.precondition.outputs.value == ''
+      shell: bash
+      run: |
+        CACHE_KEY=$(python "${{ github.action_path }}/hash_file.py" "${{ inputs.action-path }}/requirements.txt")
+        echo "value=$(echo $CACHE_KEY)" >> $GITHUB_OUTPUT
+        echo "Using cache key $CACHE_KEY ..."
+
+    - name: Cache PIP Packages
+      if: steps.precondition.outputs.value == ''
+      uses: flobernd/actions/python/cache-pip@master
+      with:
+        cache-key: ${{ steps.cache-key.outputs.value }}
+
+    - name: Restore PIP Packages
+      if: steps.precondition.outputs.value == ''
+      shell: bash
+      run: |
+        pip install -r "${{ inputs.action-path }}/requirements.txt"
+
+    - name: Set Environment Variables
+      if: steps.precondition.outputs.value == ''
+      shell: bash
+      run: |
+        echo "FB_SCRIPT_INITIALIZED_PYTHON=1" >> $GITHUB_ENV
+        echo "FB_SCRIPT_INITIALIZED_${{ inputs.id }}=1" >> $GITHUB_ENV

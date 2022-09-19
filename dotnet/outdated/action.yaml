@@ -1,0 +1,42 @@
+name: .NET Outdated
+author: Florian Bernd
+description: Invokes the 'dotnet outdated' CLI command.
+
+inputs:
+  shell:
+    description: The default shell to use for this composite action.
+    type: string
+    required: false
+    default: bash
+  workspace:
+    description: The Visual Studio workspace (directory, project- or solution-file).
+    type: string
+    required: true
+  fail-on-updates:
+    description: Specifies whether this action should fail when updates are found.
+    type: boolean
+    required: false
+    default: false
+  extra-arguments:
+    description: Extra arguments to be passed to the 'dotnet format' CLI tool.
+    required: false
+    type: string
+    default: ''
+
+# TODO: Add missing inputs
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET Outdated
+      shell: ${{ inputs.shell }}
+      run: |
+        dotnet tool install --global dotnet-outdated-tool
+
+    - name: .NET Format
+      shell: ${{ inputs.shell }}
+      run: >
+        dotnet format
+        "${{ inputs.workspace }}"
+        ${{ inputs.fail-on-updates != 'false' && '--fail-on-updates' || '' }}
+        ${{ inputs.extra-arguments }}

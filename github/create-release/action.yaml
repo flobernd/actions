@@ -1,0 +1,75 @@
+name: Create Release
+author: Florian Bernd
+description: Creates a release for a given tag.
+
+inputs:
+  tag-name:
+    description: The name of the tag.
+    required: true
+    type: string
+  target-commitish:
+    description: Specifies the commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Unused if the Git tag already exists.
+    required: false
+    type: string
+    default: ${{ github.sha }}
+  name:
+    description: The name of the release.
+    required: false
+    type: string
+    default: ''
+  body:
+    description: Text describing the contents of the tag.
+    required: false
+    type: string
+    default: ''
+  draft:
+    description: Set 'true' to create a draft (unpublished) release, 'false' to create a published one.
+    required: false
+    type: boolean
+    default: false
+  prerelease:
+    description: Set 'true' to identify the release as a prerelease, 'false' to identify the release as a full release.
+    required: false
+    type: boolean
+    default: false
+  discussion-category-name:
+    description: If specified, a discussion of the specified category is created and linked to the release. The value must be a category that already exists in the repository.
+    required: false
+    type: string
+    default: ''
+  generate-release-notes:
+    description: Whether to automatically generate the name and body for this release. If 'name' is specified, the specified name will be used; otherwise, a name will be automatically generated. If 'body' is specified, the body will be pre-pended to the automatically generated notes.
+    required: false
+    type: boolean
+    default: false
+
+outputs:
+  result:
+    description: The data returned by the GitHub API endpoint as json string.
+    value: ${{ steps.create.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create Release
+      id: create
+      uses: actions/github-script@v6.3.3
+      with:
+        script: |
+          try {
+            const response = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ inputs.tag-name }}',
+              target_commitish: '${{ inputs.target-commitish }}',
+              name: '${{ inputs.name }}',
+              body: '${{ inputs.body }}',
+              draft: ${{ inputs.draft == 'true' && 'true' || 'false' }},
+              prerelease: ${{ inputs.prerelease == 'true' && 'true' || 'false' }},
+              ${{ inputs.discussion-category-name != '' && format('discussion_category_name: ''{0}'',', inputs.discussion-category-name) || '' }}
+              generate_release_notes: ${{ inputs.generate-release-notes == 'true' && 'true' || 'false' }},
+            });
+            core.setOutput('result', response.data);
+          } catch (error) {
+            core.setFailed(error.message);
+          }

@@ -1,0 +1,39 @@
+name: .NET Restore
+author: Florian Bernd
+description: Invokes the 'dotnet restore' CLI command.
+
+inputs:
+  shell:
+    description: The default shell to use for this composite action.
+    type: string
+    required: false
+    default: bash
+  workspace:
+    description: The Visual Studio workspace (directory, project- or solution-file).
+    type: string
+    required: true
+  cache-key:
+    description: An optional cache key used to restore the packages.
+    type: string
+    required: false
+    # For example:
+    # hashFiles('**/packages.lock.json')
+    # hashFiles('**/Directory.Packages.props', '**/*.csproj')
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: .NET Cache Packages
+      if: inputs.cache-key != ''
+      uses: actions/cache@v3.0.11
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ inputs.cache-key }}
+        restore-keys: ${{ runner.os }}-nuget-
+
+    - name: .NET Restore
+      shell: ${{ inputs.shell }}
+      run: >
+        dotnet restore
+        "${{ inputs.workspace }}"

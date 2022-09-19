@@ -1,0 +1,30 @@
+name: Hash Files
+author: Florian Bernd
+description: Generates the SHA256 hash over multiple files based on a given pattern.
+
+inputs:
+  pattern:
+    description: A list of glob patterns used for matching the files. Use '!' to negate.
+    type: string
+    required: true
+
+outputs:
+  hash: 
+    description: The result hash.
+    value: ${{ steps.hash.outputs.hash }}
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare Scripts
+      uses: flobernd/actions/internal/prepare-scripts@master
+      with:
+        id: hash_files
+        action-path: ${{ github.action_path }}
+
+    - name: Hash Files
+      id: hash
+      shell: bash
+      run: |
+        HASH=$(python "${{ github.action_path }}/hash_files.py" '${{ inputs.pattern }}')
+        echo "hash=$(echo $HASH)" >> $GITHUB_OUTPUT

@@ -1,0 +1,19 @@
+name: .NET Cache Packages
+author: Florian Bernd
+description: Restores the NuGet packages for the current repository from cache.
+
+inputs:
+  cache-key:
+    description: The cache key used to cache the NuGet packages.
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: .NET Cache Packages
+      uses: actions/cache@v3.0.11
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ inputs.cache-key }}
+        restore-keys: ${{ runner.os }}-nuget-

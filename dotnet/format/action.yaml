@@ -1,0 +1,44 @@
+name: .NET Format
+author: Florian Bernd
+description: Invokes the 'dotnet format' CLI command in formatting mode.
+
+inputs:
+  shell:
+    description: The default shell to use for this composite action.
+    type: string
+    required: false
+    default: bash
+  workspace:
+    description: The Visual Studio workspace (directory, project- or solution-file).
+    type: string
+    required: true
+  include:
+    description: A list of relative file or folder paths to include in linting. All files are linted if empty.
+    required: false
+    type: string
+    default: ''
+  exclude:
+    description: A list of relative file or folder paths to exclude from linting.
+    required: false
+    type: string
+    default: ''
+  extra-arguments:
+    description: Extra arguments to be passed to the 'dotnet format' CLI tool.
+    required: false
+    type: string
+    default: ''
+
+# TODO: Add missing inputs
+
+runs:
+  using: composite
+  steps:
+    - name: .NET Format
+      shell: ${{ inputs.shell }}
+      run: >
+        dotnet format
+        "${{ inputs.workspace }}"
+        ${{ inputs.include != '' && format('--include {0}', inputs.include) || '' }}
+        ${{ inputs.exclude != '' && format('--exclude {0}', inputs.exclude) || '' }}
+        --no-restore
+        ${{ inputs.extra-arguments }}
